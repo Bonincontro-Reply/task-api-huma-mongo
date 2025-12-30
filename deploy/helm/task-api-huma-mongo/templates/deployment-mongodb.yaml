@@ -1,0 +1,80 @@
+{{- if .Values.mongodb.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "task-api-huma-mongo.mongodbName" . }}
+  labels:
+    {{- include "task-api-huma-mongo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mongodb
+    app.kubernetes.io/part-of: {{ include "task-api-huma-mongo.name" . }}
+spec:
+  replicas: {{ .Values.mongodb.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "task-api-huma-mongo.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: mongodb
+  template:
+    metadata:
+      labels:
+        {{- include "task-api-huma-mongo.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: mongodb
+      {{- with .Values.mongodb.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "task-api-huma-mongo.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mongodb.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: mongodb
+          image: "{{ .Values.image.mongodb.repository }}:{{ .Values.image.mongodb.tag }}"
+          imagePullPolicy: {{ .Values.image.mongodb.pullPolicy }}
+          ports:
+            - name: mongo
+              containerPort: {{ .Values.mongodb.containerPort }}
+          env:
+            {{- if .Values.mongodb.auth.allowEmptyPassword }}
+            - name: MONGODB_ALLOW_EMPTY_PASSWORD
+              value: "yes"
+            {{- end }}
+            - name: MONGODB_DATABASE
+              value: {{ .Values.mongodb.database | quote }}
+          {{- with .Values.mongodb.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.mongodb.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /bitnami/mongodb
+      volumes:
+        - name: data
+          {{- if .Values.mongodb.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "task-api-huma-mongo.mongodbPvcName" . }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

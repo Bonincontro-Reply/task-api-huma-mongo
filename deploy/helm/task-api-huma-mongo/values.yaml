@@ -1,0 +1,114 @@
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+image:
+  api:
+    repository: task-api-huma-mongo
+    tag: "local"
+    pullPolicy: IfNotPresent
+  frontend:
+    repository: task-api-huma-mongo-frontend
+    tag: "local"
+    pullPolicy: IfNotPresent
+  mongodb:
+    repository: bitnami/mongodb
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+api:
+  replicaCount: 1
+  containerPort: 8080
+  service:
+    type: ClusterIP
+    port: 8080
+  podAnnotations: {}
+  podSecurityContext: {}
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+  env:
+    port: "8080"
+    mongodb:
+      uri: ""
+      database: taskdb
+      collection: tasks
+    corsAllowOrigins: "http://localhost:8081,http://127.0.0.1:8081"
+  livenessProbe:
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 20
+    timeoutSeconds: 2
+  readinessProbe:
+    path: /health
+    initialDelaySeconds: 3
+    periodSeconds: 10
+    timeoutSeconds: 2
+  resources: {}
+
+frontend:
+  replicaCount: 1
+  containerPort: 80
+  service:
+    type: ClusterIP
+    port: 80
+  podAnnotations: {}
+  podSecurityContext: {}
+  securityContext: {}
+  nginx:
+    apiPathPrefix: /api/
+  livenessProbe:
+    path: /
+    initialDelaySeconds: 10
+    periodSeconds: 20
+    timeoutSeconds: 2
+  readinessProbe:
+    path: /
+    initialDelaySeconds: 3
+    periodSeconds: 10
+    timeoutSeconds: 2
+  resources: {}
+
+mongodb:
+  enabled: true
+  replicaCount: 1
+  containerPort: 27017
+  database: taskdb
+  auth:
+    allowEmptyPassword: true
+  service:
+    port: 27017
+  podAnnotations: {}
+  podSecurityContext: {}
+  securityContext: {}
+  persistence:
+    enabled: false
+    size: 1Gi
+    storageClass: ""
+  resources: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: task-api.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []

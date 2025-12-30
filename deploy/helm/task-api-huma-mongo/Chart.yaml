@@ -1,0 +1,6 @@
+apiVersion: v2
+name: task-api-huma-mongo
+description: Task API (Huma + MongoDB) with frontend
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

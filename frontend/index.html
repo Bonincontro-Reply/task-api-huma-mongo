@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Task Control Room</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="hero">
+        <div class="hero-text">
+          <span class="chip">Task API</span>
+          <h1>Task Control Room</h1>
+          <p>
+            Interfaccia elegante per creare, aggiornare e monitorare le task in
+            tempo reale.
+          </p>
+          <div class="hero-actions">
+            <button id="refresh-btn" class="ghost" type="button">
+              Aggiorna lista
+            </button>
+            <button id="health-btn" class="ghost" type="button">
+              Check API
+            </button>
+          </div>
+        </div>
+        <div class="status-card">
+          <div class="status-row">
+            <span>API status</span>
+            <span id="api-dot" class="dot idle"></span>
+          </div>
+          <div id="api-status" class="status-value">Non verificato</div>
+          <div class="status-meta">
+            Base: <span id="api-base-label">http://localhost:8080</span>
+          </div>
+        </div>
+      </header>
+
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+      <main class="layout">
+        <div class="column">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Connessione</h2>
+              <span class="panel-sub">
+                Imposta la base URL usata dal frontend.
+              </span>
+            </div>
+            <div class="field">
+              <label for="api-base">API base URL</label>
+              <input id="api-base" type="text" spellcheck="false" />
+            </div>
+            <div class="actions">
+              <button id="api-save" class="primary" type="button">Salva</button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Crea task</h2>
+              <span class="panel-sub">Titolo minimo 3 caratteri.</span>
+            </div>
+            <form id="create-form" class="stack">
+              <div class="field">
+                <label for="create-title">Titolo</label>
+                <input
+                  id="create-title"
+                  name="title"
+                  type="text"
+                  minlength="3"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label for="create-tags">Tag (separati da virgola)</label>
+                <input
+                  id="create-tags"
+                  name="tags"
+                  type="text"
+                  placeholder="k8s, demo"
+                />
+              </div>
+              <label class="check">
+                <input id="create-done" name="done" type="checkbox" />
+                <span>Segna come completata</span>
+              </label>
+              <button class="primary" type="submit">Crea task</button>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Filtro lista</h2>
+              <span class="panel-sub">
+                Aggiorna la lista in base ai criteri.
+              </span>
+            </div>
+            <form id="filter-form" class="stack">
+              <div class="field">
+                <label for="filter-done">Stato</label>
+                <select id="filter-done" name="done">
+                  <option value="all">Tutti</option>
+                  <option value="open">Aperti</option>
+                  <option value="done">Completati</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="filter-tag">Tag</label>
+                <input id="filter-tag" name="tag" type="text" placeholder="k8s" />
+              </div>
+              <div class="actions">
+                <button class="primary" type="submit">Applica filtri</button>
+                <button id="filter-clear" class="ghost" type="button">
+                  Reset
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Ispeziona e aggiorna</h2>
+              <span class="panel-sub">Usa l ID per fetch, update o delete.</span>
+            </div>
+            <form id="update-form" class="stack">
+              <div class="field">
+                <label for="update-id">Task ID</label>
+                <input id="update-id" name="id" type="text" spellcheck="false" />
+              </div>
+              <div class="field">
+                <label for="update-title">Titolo (opzionale)</label>
+                <input id="update-title" name="title" type="text" minlength="3" />
+              </div>
+              <div class="field">
+                <label for="update-tags">Tag (opzionale)</label>
+                <input
+                  id="update-tags"
+                  name="tags"
+                  type="text"
+                  placeholder="k8s, demo"
+                />
+              </div>
+              <label class="check">
+                <input id="clear-tags" type="checkbox" />
+                <span>Svuota tutti i tag</span>
+              </label>
+              <div class="field">
+                <label for="update-done">Stato (opzionale)</label>
+                <select id="update-done" name="done">
+                  <option value="">Nessuna modifica</option>
+                  <option value="false">Aperta</option>
+                  <option value="true">Completata</option>
+                </select>
+              </div>
+              <div class="actions">
+                <button id="fetch-btn" class="ghost" type="button">
+                  Carica da ID
+                </button>
+                <button class="primary" type="submit">Aggiorna</button>
+                <button id="delete-btn" class="danger" type="button">
+                  Elimina
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+
+        <div class="column">
+          <section class="panel">
+            <div class="panel-header row">
+              <div>
+                <h2>Task</h2>
+                <span class="panel-sub">
+                  Totale: <span id="tasks-count">0</span>
+                </span>
+              </div>
+              <button id="refresh-list" class="ghost" type="button">
+                Aggiorna
+              </button>
+            </div>
+            <div id="tasks-list" class="tasks-list"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Dettaglio</h2>
+              <span class="panel-sub">
+                Seleziona una task per vedere i dettagli.
+              </span>
+            </div>
+            <div id="details" class="details">
+              <div class="details-empty">Nessuna task selezionata.</div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

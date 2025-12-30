@@ -1,0 +1,18 @@
+{{- if .Values.mongodb.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "task-api-huma-mongo.mongodbName" . }}
+  labels:
+    {{- include "task-api-huma-mongo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mongodb
+spec:
+  type: ClusterIP
+  ports:
+    - name: mongo
+      port: {{ .Values.mongodb.service.port }}
+      targetPort: mongo
+  selector:
+    {{- include "task-api-huma-mongo.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: mongodb
+{{- end }}

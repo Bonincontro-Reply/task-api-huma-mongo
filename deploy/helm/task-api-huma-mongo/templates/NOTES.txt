@@ -1,0 +1,5 @@
+1. Frontend
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "task-api-huma-mongo.frontendName" . }} 8081:{{ .Values.frontend.service.port }}
+
+2. API
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "task-api-huma-mongo.apiName" . }} 8080:{{ .Values.api.service.port }}
