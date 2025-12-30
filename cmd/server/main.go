@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 
 	"task-api-huma-mongo/internal/api"
+	"task-api-huma-mongo/internal/config"
 	"task-api-huma-mongo/internal/service"
 	"task-api-huma-mongo/internal/store"
 )
@@ -101,7 +101,7 @@ func main() {
 }
 
 func loadConfig() (Config, error) {
-	portValue := getEnv("PORT", strconv.Itoa(defaultPort))
+	portValue := config.GetEnv("PORT", strconv.Itoa(defaultPort))
 	port, err := strconv.Atoi(portValue)
 	if err != nil || port <= 0 {
 		return Config{}, fmt.Errorf("invalid PORT: %s", portValue)
@@ -109,29 +109,9 @@ func loadConfig() (Config, error) {
 
 	return Config{
 		Port:             port,
-		MongoURI:         getEnv("MONGODB_URI", defaultMongoURI),
-		MongoDB:          getEnv("MONGODB_DB", defaultMongoDB),
-		MongoCollection:  getEnv("MONGODB_COLLECTION", defaultMongoCollection),
-		CORSAllowOrigins: splitCommaList(getEnv("CORS_ALLOW_ORIGINS", "http://localhost:8081,http://127.0.0.1:8081")),
+		MongoURI:         config.GetEnv("MONGODB_URI", defaultMongoURI),
+		MongoDB:          config.GetEnv("MONGODB_DB", defaultMongoDB),
+		MongoCollection:  config.GetEnv("MONGODB_COLLECTION", defaultMongoCollection),
+		CORSAllowOrigins: config.SplitCommaList(config.GetEnv("CORS_ALLOW_ORIGINS", "http://localhost:8081,http://127.0.0.1:8081")),
 	}, nil
-}
-
-func getEnv(key, defValue string) string {
-	value, ok := os.LookupEnv(key)
-	if !ok || value == "" {
-		return defValue
-	}
-	return value
-}
-
-func splitCommaList(value string) []string {
-	parts := strings.Split(value, ",")
-	out := make([]string, 0, len(parts))
-	for _, part := range parts {
-		trimmed := strings.TrimSpace(part)
-		if trimmed != "" {
-			out = append(out, trimmed)
-		}
-	}
-	return out
 }

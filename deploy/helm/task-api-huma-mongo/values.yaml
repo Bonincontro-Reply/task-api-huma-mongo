@@ -61,6 +61,48 @@ api:
     timeoutSeconds: 2
   resources: {}
 
+seedController:
+  enabled: true
+  replicaCount: 1
+  podAnnotations: {}
+  podSecurityContext: {}
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+  serviceAccount:
+    create: true
+    name: ""
+  image:
+    repository: ""
+    tag: ""
+    pullPolicy: ""
+  env:
+    pollInterval: "5s"
+    defaultSeedCount: 50
+    defaultSeedRandomSeed: 1
+    defaultSeedMode: upsert
+    defaultSeedTitlePrefix: "Task"
+    defaultSeedTags: "sample,seed"
+    defaultSeedDoneRatio: 0.3
+    defaultSeedTagCountMin: 0
+    defaultSeedTagCountMax: 2
+    defaultJobTtlSecondsAfterFinished: 300
+    defaultJobBackoffLimit: 1
+    defaultJobActiveDeadlineSeconds: 300
+  resources: {}
+
+seedJob:
+  image:
+    repository: ""
+    tag: ""
+    pullPolicy: ""
+
 frontend:
   replicaCount: 1
   containerPort: 80

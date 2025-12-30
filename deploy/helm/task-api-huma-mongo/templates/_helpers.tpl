@@ -51,6 +51,30 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- printf "%s-mongodb" (include "task-api-huma-mongo.fullname" .) -}}
 {{- end -}}
 
+{{- define "task-api-huma-mongo.seedControllerName" -}}
+{{- printf "%s-seed-controller" (include "task-api-huma-mongo.fullname" .) -}}
+{{- end -}}
+
+{{- define "task-api-huma-mongo.seedControllerServiceAccountName" -}}
+{{- if .Values.seedController.serviceAccount.create -}}
+{{- default (include "task-api-huma-mongo.seedControllerName" .) .Values.seedController.serviceAccount.name -}}
+{{- else -}}
+{{- default "default" .Values.seedController.serviceAccount.name -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "task-api-huma-mongo.seedControllerImage" -}}
+{{- $repo := .Values.seedController.image.repository | default .Values.image.api.repository -}}
+{{- $tag := .Values.seedController.image.tag | default .Values.image.api.tag -}}
+{{- printf "%s:%s" $repo $tag -}}
+{{- end -}}
+
+{{- define "task-api-huma-mongo.seedJobImage" -}}
+{{- $repo := .Values.seedJob.image.repository | default .Values.image.api.repository -}}
+{{- $tag := .Values.seedJob.image.tag | default .Values.image.api.tag -}}
+{{- printf "%s:%s" $repo $tag -}}
+{{- end -}}
+
 {{- define "task-api-huma-mongo.mongodbPvcName" -}}
 {{- printf "%s-mongodb" (include "task-api-huma-mongo.fullname" .) -}}
 {{- end -}}

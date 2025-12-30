@@ -8,6 +8,10 @@ set "RELEASE_NAME=task-api-huma-mongo"
 set "NAMESPACE=task-api"
 set "CHART_DIR=%PROJECT_ROOT%\deploy\helm\task-api-huma-mongo"
 set "CHART_NAME=task-api-huma-mongo"
+set "APPLY_SEED=true"
+set "SEED_MANIFEST=%PROJECT_ROOT%\deploy\examples\taskseed-sample.yaml"
+set "SEED_NAME=sample-seed"
+set "SEED_TIMEOUT_SEC=120"
 
 call :require docker
 call :require kind
@@ -54,6 +58,7 @@ if errorlevel 1 set "FULL_NAME=%RELEASE_NAME%-%CHART_NAME%"
 set "FRONTEND_SVC=%FULL_NAME%-frontend"
 set "API_SVC=%FULL_NAME%-api"
 set "MONGO_SVC=%FULL_NAME%-mongodb"
+set "SEED_CONTROLLER=%FULL_NAME%-seed-controller"
 
 kubectl get svc -n %NAMESPACE% %FRONTEND_SVC% >NUL 2>NUL
 if errorlevel 1 (
@@ -71,6 +76,35 @@ if errorlevel 1 (
   exit /b 1
 )
 
+kubectl -n %NAMESPACE% get deployment %SEED_CONTROLLER% >NUL 2>NUL
+if not errorlevel 1 (
+  echo Waiting for seed controller rollout...
+  kubectl -n %NAMESPACE% rollout status deployment/%SEED_CONTROLLER% --timeout=120s >NUL
+)
+
+if /I "%APPLY_SEED%"=="true" (
+  if exist "%SEED_MANIFEST%" (
+    echo Applying seed manifest...
+    kubectl apply -n %NAMESPACE% -f "%SEED_MANIFEST%" >NUL
+    if errorlevel 1 (
+      echo Failed to apply seed manifest.
+    ) else (
+      echo Waiting for TaskSeed "%SEED_NAME%" to finish...
+      powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+        "$ns='%NAMESPACE%'; $name='%SEED_NAME%'; $timeout=%SEED_TIMEOUT_SEC%; $start=Get-Date; " ^
+        "while((Get-Date) - $start -lt (New-TimeSpan -Seconds $timeout)) { " ^
+        "  $phase = kubectl -n $ns get taskseed $name -o jsonpath='{.status.phase}' 2>$null; " ^
+        "  if($phase -eq 'Succeeded'){ Write-Output 'TaskSeed succeeded'; exit 0 } " ^
+        "  if($phase -eq 'Failed'){ Write-Output 'TaskSeed failed'; exit 1 } " ^
+        "  Start-Sleep -Seconds 2 " ^
+        "} " ^
+        "Write-Output 'TaskSeed still pending'; exit 1"
+    )
+  ) else (
+    echo Seed manifest not found: %SEED_MANIFEST%
+  )
+)
+
 call :resolveport 8081 FRONTEND_PORT
 call :resolveport 8080 API_PORT
 call :resolveport 27017 MONGO_PORT
@@ -85,6 +119,7 @@ echo API:      http://localhost:%API_PORT%
 echo MongoDB:  mongodb://localhost:%MONGO_PORT%
 
 popd
+
 exit /b 0
 
 :require

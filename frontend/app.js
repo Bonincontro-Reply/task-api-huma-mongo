@@ -36,6 +36,7 @@ const state = {
     "/api",
   tasks: [],
   selected: null,
+  tasksHash: "",
   filters: {
     done: "all",
     tag: "",
@@ -139,22 +140,61 @@ async function checkHealth() {
 async function loadTasks() {
   dom.tasksList.innerHTML = `<div class="task-meta">Caricamento...</div>`;
   try {
-    const params = new URLSearchParams();
-    if (state.filters.done !== "all") {
-      params.set("done", state.filters.done === "done");
-    }
-    if (state.filters.tag) {
-      params.set("tag", state.filters.tag);
-    }
-    const path = params.toString() ? `/tasks?${params}` : "/tasks";
-    const data = await apiRequest(path);
-    state.tasks = data.items || [];
-    dom.tasksCount.textContent = data.count ?? state.tasks.length;
-    renderTasks();
+    const data = await fetchTasksData();
+    applyTasksData(data);
   } catch (error) {
     dom.tasksList.innerHTML = "";
     showNotice("error", `Errore lista: ${error.message}`);
   }
+}
+
+async function refreshTasksIfChanged() {
+  try {
+    const data = await fetchTasksData();
+    const nextHash = computeTasksHash(data.items);
+    if (nextHash === state.tasksHash) {
+      return;
+    }
+    applyTasksData(data);
+  } catch (error) {
+    // Silent refresh errors; user can still click refresh.
+  }
+}
+
+async function fetchTasksData() {
+  const params = new URLSearchParams();
+  if (state.filters.done !== "all") {
+    params.set("done", state.filters.done === "done");
+  }
+  if (state.filters.tag) {
+    params.set("tag", state.filters.tag);
+  }
+  const path = params.toString() ? `/tasks?${params}` : "/tasks";
+  const data = await apiRequest(path);
+  return {
+    items: data.items || [],
+    count: data.count ?? (data.items || []).length,
+  };
+}
+
+function applyTasksData(data) {
+  state.tasks = data.items;
+  state.tasksHash = computeTasksHash(state.tasks);
+  dom.tasksCount.textContent = data.count ?? state.tasks.length;
+  renderTasks();
+}
+
+function computeTasksHash(tasks) {
+  if (!tasks.length) return "empty";
+  const ordered = [...tasks].sort((a, b) => a.id.localeCompare(b.id));
+  const payload = ordered.map((task) => ({
+    id: task.id,
+    title: task.title,
+    done: task.done,
+    tags: Array.isArray(task.tags) ? task.tags : [],
+    createdAt: task.createdAt,
+  }));
+  return JSON.stringify(payload);
 }
 
 function renderTasks() {
@@ -478,3 +518,4 @@ dom.tasksList.addEventListener("click", (event) => {
 setApiBase(state.baseUrl, false);
 checkHealth();
 loadTasks();
+setInterval(refreshTasksIfChanged, 10000);

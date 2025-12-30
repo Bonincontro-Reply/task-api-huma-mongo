@@ -1,0 +1,12 @@
+.git
+.gitignore
+.idea
+.vscode
+bin
+dist
+node_modules
+frontend/node_modules
+deploy/examples
+scripts
+*.log
+*.tmp

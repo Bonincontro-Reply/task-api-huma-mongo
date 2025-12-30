@@ -50,3 +50,7 @@ func (s *MongoStore) Ping(ctx context.Context) error {
 func (s *MongoStore) Disconnect(ctx context.Context) error {
 	return s.client.Disconnect(ctx)
 }
+
+func (s *MongoStore) Collection() *mongo.Collection {
+	return s.collection
+}

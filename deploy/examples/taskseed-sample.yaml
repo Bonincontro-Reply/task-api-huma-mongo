@@ -1,0 +1,20 @@
+apiVersion: tasks.huma.io/v1alpha1
+kind: TaskSeed
+metadata:
+  name: sample-seed
+spec:
+  size: 20
+  seed: 1
+  mode: upsert
+  seedVersion: "sample-v1"
+  titlePrefix: "Sample"
+  tags:
+    - sample
+    - seed
+  doneRatio: 0.25
+  tagCountMin: 0
+  tagCountMax: 2
+  database: taskdb
+  collection: tasks
+  maintenanceSchedule: "* * * * *"
+

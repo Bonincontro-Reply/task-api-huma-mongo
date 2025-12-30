@@ -14,6 +14,8 @@ Microservizio per task con API Huma, storage MongoDB e frontend statico (Nginx).
 |   |   |-- api.Dockerfile
 |   |   |-- frontend.Dockerfile
 |   |   `-- docker-compose.yml
+|   |-- examples/
+|   |   `-- taskseed-sample.yaml
 |   `-- helm/
 |       `-- task-api-huma-mongo/
 |-- scripts/
@@ -24,7 +26,7 @@ Microservizio per task con API Huma, storage MongoDB e frontend statico (Nginx).
 
 ## Requisiti
 
-- Go 1.23+ (solo per esecuzione locale)
+- Go 1.25+ (solo per esecuzione locale)
 - Docker Desktop
 - Helm + kubectl (per Kubernetes)
 - kind (per gli script Windows)
@@ -70,6 +72,8 @@ cd C:\Progetti\task-api-huma-mongo
 scripts\start-kind.cmd
 ```
 
+Lo script applica anche l'esempio `deploy/examples/taskseed-sample.yaml` (se presente).
+
 Pulizia:
 
 ```powershell
@@ -92,6 +96,47 @@ kubectl -n task-api port-forward svc/task-api-huma-mongo-api 8080:8080
 ```
 
 Valori configurabili in `deploy/helm/task-api-huma-mongo/values.yaml`.
+
+## Seeding DB (TaskSeed CRD)
+
+La chart installa il CRD `TaskSeed` e un controller che crea Job di seeding.
+Esempio (vedi `deploy/examples/taskseed-sample.yaml`):
+
+```yaml
+apiVersion: tasks.huma.io/v1alpha1
+kind: TaskSeed
+metadata:
+  name: sample-seed
+  namespace: task-api
+spec:
+  size: 50
+  seed: 1
+  mode: upsert
+  seedVersion: "sample-v1"
+  titlePrefix: "Sample"
+  tags:
+    - sample
+    - seed
+  doneRatio: 0.25
+  tagCountMin: 0
+  tagCountMax: 2
+  database: taskdb
+  collection: tasks
+  maintenanceSchedule: "* * * * *"
+```
+
+Se vuoi usare un URI Mongo in Secret:
+
+```yaml
+spec:
+  mongodb:
+    uriSecretRef:
+      name: mongo-conn
+      key: uri
+```
+
+Il controller usa l'immagine API per eseguire `/app/seeder` e non tocca ambienti prod a meno che tu non crei il CRD.
+Se imposti `maintenanceSchedule`, ogni esecuzione elimina le task completate e crea nuove task per tornare al numero `spec.size`.
 
 ## Avvio locale (API only)
 
